@@ -20,8 +20,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Build with Maven
+    - name: Build and Test Patient Service      
+      working-directory: patient-service
       run: mvn clean install -DskipTests=false
-
-    - name: Run tests
-      run: mvn test
