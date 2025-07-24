@@ -23,3 +23,11 @@ jobs:
     - name: Build and Test Patient Service      
       working-directory: patient-service/patient-service
       run: mvn clean install -DskipTests=false
+
+    - name: Build and Test Doctor Service
+      working-directory: doctor-service/doctor-service
+      run: mvn clean install -DskipTests=false
+
+    - name: Build and Test Appointment Service
+      working-directory: appointment-service/appointment-service
+      run: mvn clean install -DskipTests=false
