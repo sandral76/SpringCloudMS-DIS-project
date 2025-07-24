@@ -1,0 +1,5 @@
+package com.clinic.appointment_service.request;
+
+public class AppointmentRequest {
+
+}

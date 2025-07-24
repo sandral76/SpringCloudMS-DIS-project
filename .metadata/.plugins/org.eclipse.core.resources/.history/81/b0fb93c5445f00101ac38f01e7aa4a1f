@@ -1,0 +1,40 @@
+package com.clinic.billing_service.service;
+
+import com.clinic.billing_service.model.Billing;
+import com.clinic.billing_service.repository.BillingRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class BillingService {
+
+    @Autowired
+    private BillingRepository billingRepository;
+
+    public Billing createBilling(Long appointmentId, Double amount) {
+        Billing billing = new Billing();
+        billing.setAppointmentId(appointmentId);
+        billing.setAmount(amount);
+        billing.setBillingDate(LocalDateTime.now());
+        billing.setStatus("UNPAID");
+        return billingRepository.save(billing);
+    }
+
+    public List<Billing> getAllBillings() {
+        return billingRepository.findAll();
+    }
+
+    public Optional<Billing> getBillingById(Long id) {
+        return billingRepository.findById(id);
+    }
+
+    public Billing markAsPaid(Long id) {
+        Billing billing = billingRepository.findById(id).orElseThrow();
+        billing.setStatus("PAID");
+        return billingRepository.save(billing);
+    }
+}

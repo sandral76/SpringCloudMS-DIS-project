@@ -1,0 +1,102 @@
+package com.clinic.appointment_service.service;
+
+import com.clinic.appointment_service.dto.AppointmentDTO;
+import com.clinic.appointment_service.model.Appointment;
+import com.clinic.appointment_service.repository.AppointmentRepository;
+import com.clinic.appointment_service.request.AppointmentRequest;
+import com.clinic.appointment_service.client.DoctorClient;
+import com.clinic.appointment_service.client.PatientClient;
+
+import feign.FeignException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class AppointmentService {
+
+    @Autowired
+    private AppointmentRepository repository;
+
+    @Autowired
+    private PatientClient patientClient;
+
+    @Autowired
+    private DoctorClient doctorClient;
+
+    public List<AppointmentDTO> findAllAppointments() {
+        return repository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<Appointment> findById(Long id) {
+        return repository.findById(id);
+    }
+
+    public Appointment createAppointment(AppointmentRequest request) {
+        // Validacija postojanja pacijenta
+        try {
+            patientClient.getPatientById(request.getPatientId());
+        } catch (FeignException.NotFound e) {
+            throw new IllegalArgumentException("Pacijent sa ID " + request.getPatientId() + " ne postoji.");
+        }
+
+        // Validacija postojanja doktora
+        try {
+            doctorClient.getDoctorById(request.getDoctorId());
+        } catch (FeignException.NotFound e) {
+            throw new IllegalArgumentException("Doktor sa ID " + request.getDoctorId() + " ne postoji.");
+        }
+
+        Appointment appointment = new Appointment();
+        appointment.setPatientId(request.getPatientId());
+        appointment.setDoctorId(request.getDoctorId());
+        appointment.setAppointmentDateTime(request.getAppointmentTime());
+        appointment.setStatus("SCHEDULED");
+
+        return repository.save(appointment);
+    }
+
+    public Appointment update(Long id, Appointment appointment) {
+        return repository.findById(id).map(existing -> {
+            existing.setAppointmentDateTime(appointment.getAppointmentDateTime());
+            existing.setPatientId(appointment.getPatientId());
+            existing.setDoctorId(appointment.getDoctorId());
+            existing.setStatus(appointment.getStatus());
+            return repository.save(existing);
+        }).orElseThrow(() -> new RuntimeException("Termin sa ID " + id + " nije pronađen."));
+    }
+
+    public void delete(Long id) {
+        repository.deleteById(id);
+    }
+
+    public AppointmentDTO convertToDTO(Appointment appointment) {
+        AppointmentDTO dto = new AppointmentDTO();
+        dto.setId(appointment.getId());
+        dto.setAppointmentTime(appointment.getAppointmentDateTime());
+        dto.setStatus(appointment.getStatus());
+
+        try {
+            String patientName = patientClient.getPatientName(appointment.getPatientId()).getBody();
+            dto.setPatientName(patientName);
+        } catch (FeignException.NotFound e) {
+            dto.setPatientName("Nepoznat pacijent");
+        }
+
+        try {
+            String doctorName = doctorClient.getDoctorName(appointment.getDoctorId()).getBody();
+            dto.setDoctorName(doctorName);
+        } catch (FeignException.NotFound e) {
+            dto.setDoctorName("Nepoznat doktor");
+        }
+
+        return dto;
+    }
+
+}

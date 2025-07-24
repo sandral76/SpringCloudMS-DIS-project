@@ -1,0 +1,119 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver
+    environment:
+      SA_PASSWORD: "Password123!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    networks:
+      - ms-network
+  sql-init:
+    image: mcr.microsoft.com/mssql-tools
+    depends_on:
+      - sqlserver
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "Waiting for SQL Server to start..."
+        until /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P Password123! -Q "SELECT 1"
+        do
+          echo "Waiting for SQL Server..."
+          sleep 5
+        done
+        echo "Running init.sql script..."
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P Password123! -i /scripts/init.sql
+    volumes:
+      - "C:/Users/Administrator/Desktop/DIS projekat S/DIS/init"
+    networks:
+      - ms-network
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    hostname: rabbitmq-host
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - ms-network
+
+  eureka-server:
+    image: eureka-server-v1
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - ms-network
+    depends_on:
+      - sqlserver
+
+  config-server:
+    image: config-server-v1
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - ms-network
+    depends_on:
+      - eureka-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      retries: 5
+      start_period: 15s  
+
+  patient-service:
+    image: patient-service-v3
+    container_name: patient-service
+    depends_on:
+      - eureka-server
+      - config-server
+      - sqlserver
+    ports:
+      - "8082:8082"
+    networks:
+      - ms-network
+
+  doctor-service:
+    image: doctor-service-v2
+    container_name: doctor-service
+    depends_on:
+      - eureka-server
+      - config-server
+      - sqlserver
+    ports:
+      - "8083:8083"
+    networks:
+      - ms-network
+
+  billing-service:
+    image: billing-service-v2
+    container_name: billing-service
+    depends_on:
+      - eureka-server
+      - config-server
+      - sqlserver
+      - rabbitmq
+    ports:
+      - "8085:8085"
+    networks:
+      - ms-network
+
+  appointment-service:
+    image: appointment-service-v3
+    container_name: appointment-service
+    depends_on:
+      - eureka-server
+      - config-server
+      - sqlserver
+      - rabbitmq
+    ports:
+      - "8084:8084"
+    networks:
+      - ms-network
+
+networks:
+  ms-network:
+    driver: bridge

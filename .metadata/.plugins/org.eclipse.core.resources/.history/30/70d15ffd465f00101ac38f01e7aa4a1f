@@ -1,0 +1,15 @@
+package com.clinic.appointment_service.client;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+@FeignClient(name = "doctor-service", url = "http://localhost:8083")
+public interface DoctorClient {
+	
+	@GetMapping("/doctors/{id}/name")
+	String getDoctorName(@PathVariable Long id);
+	
+	@GetMapping("/doctors/{id}")
+    Object getDoctorById(@PathVariable("id") Long id);
+}

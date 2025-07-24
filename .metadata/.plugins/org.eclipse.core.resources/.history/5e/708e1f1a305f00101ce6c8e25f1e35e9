@@ -1,0 +1,5 @@
+package com.clinic.billing_service.repository;
+
+public class BillingRepository {
+
+}

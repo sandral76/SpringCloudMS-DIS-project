@@ -1,0 +1,54 @@
+package com.clinic.appointment_service.dto;
+
+import java.time.LocalDateTime;
+
+import org.springframework.http.ResponseEntity;
+
+public class AppointmentDTO {
+
+	private Long id;
+	private String patientName;
+	private String doctorName;
+	private LocalDateTime appointmentTime;
+	private String status;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getPatientName() {
+		return patientName;
+	}
+
+	public void setPatientName(ResponseEntity<String> responseEntity) {
+		this.patientName = responseEntity;
+	}
+
+	public String getDoctorName() {
+		return doctorName;
+	}
+
+	public void setDoctorName(String doctorName) {
+		this.doctorName = doctorName;
+	}
+
+	public LocalDateTime getAppointmentTime() {
+		return appointmentTime;
+	}
+
+	public void setAppointmentTime(LocalDateTime appointmentTime) {
+		this.appointmentTime = appointmentTime;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+}

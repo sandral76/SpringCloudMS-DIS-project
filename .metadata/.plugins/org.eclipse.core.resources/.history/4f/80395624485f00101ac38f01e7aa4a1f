@@ -1,0 +1,85 @@
+package com.clinic.appointment_service.service;
+
+import com.clinic.appointment_service.dto.AppointmentDTO;
+import com.clinic.appointment_service.model.Appointment;
+import com.clinic.appointment_service.repository.AppointmentRepository;
+import com.clinic.appointment_service.client.DoctorClient;
+import com.clinic.appointment_service.client.PatientClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class AppointmentService {
+
+	@Autowired
+	private AppointmentRepository repository;
+
+	@Autowired
+	private PatientClient patientClient; // Feign client za PatientService
+
+	@Autowired
+	private DoctorClient doctorClient; // Feign client za DoctorService
+
+	public List<AppointmentDTO> findAllAppointments() {
+		return repository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+	}
+
+	public Optional<Appointment> findById(Long id) {
+		return repository.findById(id);
+	}
+
+	public Appointment save(Appointment appointment) {
+		return repository.save(appointment);
+	}
+
+	public Appointment update(Long id, Appointment appointment) {
+		return repository.findById(id).map(existing -> {
+			existing.setAppointmentDateTime(appointment.getAppointmentDateTime());
+			existing.setPatientId(appointment.getPatientId());
+			existing.setDoctorId(appointment.getDoctorId());
+			return repository.save(existing);
+		}).orElseThrow(() -> new RuntimeException("Appointment not found"));
+	}
+
+	public void delete(Long id) {
+		repository.deleteById(id);
+	}
+
+	public String getPatientName(Long patientId) {
+		return patientClient.getPatientName(patientId);
+	}
+
+	public String getDoctorName(Long doctorId) {
+		return doctorClient.getDoctorName(doctorId);
+	}
+
+	private AppointmentDTO convertToDTO(Appointment appointment) {
+		AppointmentDTO dto = new AppointmentDTO();
+		dto.setId(appointment.getId());
+		dto.setAppointmentTime(appointment.getAppointmentDateTime());
+		dto.setPatientName(getPatientName(appointment.getPatientId()));
+		dto.setDoctorName(getDoctorName(appointment.getDoctorId()));
+		return dto;
+	}
+
+	public Appointment createAppointment(Appointment appointment) {
+        try {
+            doctorClient.getDoctorById(appointment.getDoctorId());
+        } catch (Exception e) {
+            throw new RuntimeException("Doktor sa ID " + appointment.getDoctorId() + " ne postoji.");
+        }
+
+        try {
+            patientClient.getPatientById(appointment.getPatientId());
+        } catch (Exception e) {
+            throw new RuntimeException("Pacijent sa ID " + appointment.getPatientId() + " ne postoji.");
+        }
+
+        return appointmentRepository.save(appointment);
+    }
+}
+}
