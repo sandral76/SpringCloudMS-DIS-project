@@ -43,7 +43,7 @@ Svaki mikroservis sadrži **unit testove** koji testiraju poslovnu logiku izolov
 
 - Korišćeni alati: **JUnit 5**, **Mockito**
 
-#### 🔗 Testiranje međuservisne komunikacije
+#### Testiranje međuservisne komunikacije
 
 S obzirom da mikroservisi međusobno komuniciraju, testirani su sledeći scenariji:
 
